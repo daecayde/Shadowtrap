@@ -1,0 +1,91 @@
+# ShadowTrap Configuration
+# Copy this file to shadowtrap.yml and customize
+
+general:
+  log_dir: "./logs"
+  log_format: "json"          # json | sqlite | both
+  db_path: "./logs/shadowtrap.db"
+  verbosity: "info"           # debug | info | warning | error
+  max_connections_per_ip: 10
+  rate_limit_window: 60       # seconds
+  geo_enabled: true
+  geoip_db: "/usr/share/GeoIP/GeoLite2-City.mmdb"
+
+services:
+  ssh:
+    enabled: true
+    bind: "0.0.0.0"
+    port: 2222
+    banner: "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.6"
+    max_auth_attempts: 6
+    server_key: "./config/ssh_host_rsa_key"  # auto-generated if missing
+    emulate_shell: true
+    fake_filesystem:
+      enabled: true
+      root: "./config/fake_fs/"
+    recorded_commands:
+      - "uname -a": "Linux darknet-srv 5.15.0-91-generic #101-Ubuntu SMP x86_64 GNU/Linux"
+      - "whoami": "root"
+      - "id": "uid=0(root) gid=0(root) groups=0(root)"
+      - "cat /etc/passwd": "root:x:0:0:root:/root:/bin/bash"
+      - "ifconfig": "eth0: inet 10.0.2.15 netmask 255.255.255.0"
+
+  http:
+    enabled: true
+    bind: "0.0.0.0"
+    port: 8080
+    server_header: "Apache/2.4.58 (Ubuntu)"
+    fake_pages:
+      "/": "default_login.html"
+      "/admin": "admin_panel.html"
+      "/wp-login.php": "wordpress_login.html"
+      "/phpmyadmin": "phpmyadmin_login.html"
+    capture_post_data: true
+    capture_headers: true
+    log_user_agents: true
+
+  ftp:
+    enabled: true
+    bind: "0.0.0.0"
+    port: 2121
+    banner: "220 (vsFTPd 3.0.5)"
+    max_login_attempts: 5
+    fake_files:
+      - "backup.sql.gz"
+      - "credentials.txt"
+      - ".env"
+      - "id_rsa"
+
+  smtp:
+    enabled: false
+    bind: "0.0.0.0"
+    port: 2525
+    banner: "220 mail.example.com ESMTP Postfix (Ubuntu)"
+    capture_emails: true
+    relay_test: true
+
+  telnet:
+    enabled: false
+    bind: "0.0.0.0"
+    port: 2323
+    banner: "BusyBox v1.36.1 built-in shell (ash)"
+    login_prompt: "darknet login: "
+    password_prompt: "Password: "
+
+alerts:
+  enabled: false
+  webhook_url: ""              # Slack/Discord webhook URL
+  telegram_bot_token: ""
+  telegram_chat_id: ""
+  alert_on:
+    - "successful_login"
+    - "command_execution"
+    - "file_upload"
+    - "brute_force_detected"
+  cooldown: 300                # seconds between repeated alerts
+
+dashboard:
+  enabled: true
+  refresh_rate: 2              # seconds
+  max_events: 500
+  show_geo: true
